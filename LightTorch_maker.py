@@ -20,6 +20,7 @@ import pywinauto as pwa
 import win32clipboard
 from PIL import ImageGrab
 
+
 user32 = windll.user32
 user32.SetProcessDPIAware()
 
