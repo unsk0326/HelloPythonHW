@@ -22,6 +22,7 @@ from PIL import ImageGrab
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 import json
+import random
 
 slack_token = 'xoxb-902393044309-4362724146146-EyPY8UogBG5PuHVS1i0H7WHa'
 
@@ -80,8 +81,10 @@ class Crafter():
         self.less_material_picture = config['torch']['less_material_picture']
         self.t1_opt_picture = config['torch']['T1_opt_picture']
         self.wjsdml_opt_picture = config['torch']['wjsdml_opt_picture']
+        self.notwjsdml_opt_picture = config['torch']['notwjsdml_opt_picture']
         self.fireskill_opt_picture = config['torch']['fireskill_opt_picture']
         self.num8_opt_picture = config['torch']['number8_opt_picture']
+        self.num7_opt_picture = config['torch']['number7_opt_picture']
         self.confidence_alters =  0.87
 
         pygame.mixer.init()
@@ -159,7 +162,9 @@ class Crafter():
         while pygame.mixer.music.get_busy():
             clock.tick(500)
     def hit_item(self, targetPoint):
-        mo.move(targetPoint[0], targetPoint[1])
+        offsetx = random.randint(0, 20) - 11
+        offsety = random.randint(0, 9) - 5
+        mo.move(targetPoint[0]+offsetx, targetPoint[1]+offsety)
         time.sleep(0.05)
         mo.click()
         time.sleep(0.06)
@@ -281,18 +286,18 @@ class Crafter():
                     cv2.imwrite(payoff, img2)
                     print(payoff)
                     # It gives cross OS compatibility on filepath.
-                    response = self.slack.files_upload(
-                        file='./img.png',
-                        initial_comment='finished check result',
-                        channels='general'
-                    )
+                    # response = self.slack.files_upload(
+                    #     file='./img.png',
+                    #     initial_comment='finished check result',
+                    #     channels='general'
+                    # )
                     self.run = False
     def reroll_T1_option(self, wjsdml=False):
         keyState = 0
         self.run = False
 
         it = Crafter()
-
+        index = 0
         while True:
             time.sleep(0.05)
             stop_key = keys.is_pressed('F1')
@@ -303,6 +308,7 @@ class Crafter():
                 break
 
             if start_key == True:
+                index = 0
                 from win32gui import FindWindow, GetWindowRect
 
                 window_handle = FindWindow(None, "Torchlight: Infinite  ")
@@ -328,7 +334,8 @@ class Crafter():
                 self.run = False
 
             if self.run == True:
-                time.sleep(0.45)
+                index += 1
+                time.sleep(0.55)
                 #self.hit_item()
                 #mo.move(loc_app[0]+loc_try[0],loc_app[1]+loc_try[1])
                 should_click_left = False
@@ -338,16 +345,21 @@ class Crafter():
                 # no -> click left
                 ret = self.check_pic(img, self.loc_capture_size, self.t1_opt_picture)
                 ret2 = self.check_pic(img, self.loc_capture_size, self.wjsdml_opt_picture)
+                ret3 = self.check_pic(img, self.loc_capture_size, self.notwjsdml_opt_picture)
                 if (ret != True):
-                    print("1 t1 option is not found")
+                    print("{} : 1 t1 option is not found".format(index))
                     should_click_left = True
-                if wjsdml == True and ret2 == False:
-                    print("1 전의 option is not found")
+                if wjsdml == True and ret2 == False and ret == True:
+                    print("{} : 2 전의 option is not found".format(index))
                     should_click_left = True
+                if wjsdml == True and ret3==True:
+                    print("{} : 3 짭전의 option is found".format(index))
+                    should_click_left = True
+
 
                 if should_click_left:
                     self.hit_item(self.left_button)
-                    time.sleep(0.1)
+                    time.sleep(0.4)
                     img = self.grabImage(self.loc_capture_craft_size)
                     ret = self.check_pic(img, self.loc_capture_craft_size, self.less_material_picture)
                     if ret:
@@ -504,7 +516,7 @@ class Crafter():
                 self.run = False
 
             if self.run == True:
-                time.sleep(0.1)
+                time.sleep(0.3)
                 #self.hit_item()
                 #mo.move(loc_app[0]+loc_try[0],loc_app[1]+loc_try[1])
                 should_reroll = False
@@ -513,9 +525,10 @@ class Crafter():
                 # check t1
                 # no -> click left
                 ret = self.check_pic(img, self.loc_map_quanty_size, self.num8_opt_picture)
+                ret2 = self.check_pic(img, self.loc_map_quanty_size, self.num7_opt_picture)
 
-                if (ret != True):
-                    print("1 num8 option is not found")
+                if (ret != True) and ret2 != True:
+                    print("1 num8/7 option is not found")
                     should_reroll = True
                 else:
                     print("quant is enough")
